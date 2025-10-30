@@ -1,0 +1,101 @@
+using System;  // Подключаем базовую библиотеку для работы с консолью и основными типами
+class Program  // Объявляем главный класс программы
+{
+    static void Main()  // Главный метод, с которого начинается выполнение программы
+    {
+        Console.WriteLine("Введите данные:");  // Выводим приглашение для пользователя
+        string input = Console.ReadLine();  // Читаем введенную пользователем строку
+        
+        if (string.IsNullOrEmpty(input))  // Проверяем, пустая ли строка или null
+        {
+            Console.WriteLine("Пустой ввод");  // Сообщаем о пустом вводе
+            return;  // Завершаем программу досрочно
+        }
+        object result = input;  // Создаем переменную для хранения результата (может хранить любой тип)
+        string typeName = "string";  // Переменная для хранения имени типа, по умолчанию "строка"
+        if (input.StartsWith("[") && input.EndsWith("]"))  // Проверяем, является ли ввод массивом (в квадратных скобках)
+        {
+            string[] parts = input.Trim('[', ']').Split(',');  // Убираем скобки и разбиваем строку на элементы по запятым
+            if (parts.Length > 0)  // Проверяем, что массив не пустой
+            {
+                string first = parts[0].Trim();  // Берем первый элемент и убираем пробелы
+                // Пробуем определить тип для всего массива, а не только по первому элементу
+                if (TryParseArray(parts, int.Parse, out int[] intArray))  // Пытаемся преобразовать в массив целых чисел
+                { 
+                    result = intArray;  // Сохраняем результат как массив int
+                    typeName = "int[]";  // Устанавливаем имя типа
+                }
+                else if (TryParseArray(parts, double.Parse, out double[] doubleArray))  // Пытаемся преобразовать в массив дробных чисел
+                { 
+                    result = doubleArray;  // Сохраняем результат как массив double
+                    typeName = "double[]";  // Устанавливаем имя типа
+                }
+                else if (TryParseArray(parts, bool.Parse, out bool[] boolArray))  // Пытаемся преобразовать в массив логических значений
+                { 
+                    result = boolArray;  // Сохраняем результат как массив bool
+                    typeName = "bool[]";  // Устанавливаем имя типа
+                }
+                else if (IsCharArray(parts))  // Проверяем, является ли массив массивом символов
+                { 
+                    result = ParseCharArray(parts);  // Преобразуем в массив char
+                    typeName = "char[]";  // Устанавливаем имя типа
+                }
+                else  // Если ни один из предыдущих типов не подошел
+                { 
+                    result = ParseStringArray(parts);  // Преобразуем в массив строк
+                    typeName = "string[]";  // Устанавливаем имя типа
+                }
+            }
+        }
+        else if (int.TryParse(input, out int i)) { result = i; typeName = "int"; }  // Пытаемся преобразовать в целое число
+        else if (double.TryParse(input, out double d)) { result = d; typeName = "double"; }  // Пытаемся преобразовать в дробное число
+        else if (bool.TryParse(input, out bool b)) { result = b; typeName = "bool"; }  // Пытаемся преобразовать в логическое значение
+        else if (input.Length == 1) { result = input[0]; typeName = "char"; }  // Если строка из одного символа - обрабатываем как char
+        Console.WriteLine($"Тип: {typeName}\nЗначение: {result}\nТип переменной: {result.GetType()}");  // Выводим результаты
+    }
+    // Универсальный метод для проверки возможности парсинга всего массива
+    static bool TryParseArray<T>(string[] parts, Func<string, T> parser, out T[] result)  // T - обобщенный тип
+    {
+        result = new T[parts.Length];  // Создаем новый массив указанного типа
+        for (int i = 0; i < parts.Length; i++)  // Проходим по всем элементам массива
+        {
+            try  // Пытаемся выполнить преобразование
+            {
+                result[i] = parser(parts[i].Trim());  // Преобразуем элемент, убирая пробелы
+            }
+            catch  // Если преобразование вызвало ошибку
+            {
+                return false;  // Возвращаем false - массив нельзя преобразовать в этот тип
+            }
+        }
+        return true;  // Все элементы успешно преобразованы
+    }
+
+    // Проверка, что все элементы - одиночные символы
+    static bool IsCharArray(string[] parts)  // Метод проверки массива символов
+    {
+        foreach (var part in parts)  // Перебираем все элементы массива
+        {
+            string trimmed = part.Trim();  // Убираем пробелы вокруг элемента
+            if (trimmed.Length != 1)  // Проверяем, что элемент состоит ровно из одного символа
+                return false;  // Если нет - это не массив символов
+        }
+        return true;  // Все элементы - одиночные символы
+    }
+    // Парсинг char массива
+    static char[] ParseCharArray(string[] parts)  // Метод преобразования в массив символов
+    {
+        char[] array = new char[parts.Length];  // Создаем новый массив символов
+        for (int i = 0; i < parts.Length; i++)  // Проходим по всем элементам
+            array[i] = parts[i].Trim()[0];  // Берем первый символ каждого элемента (после удаления пробелов)
+        return array;  // Возвращаем готовый массив
+    }
+    // Парсинг string массива (просто обрезаем пробелы)
+    static string[] ParseStringArray(string[] parts)  // Метод преобразования в массив строк
+    {
+        string[] array = new string[parts.Length];  // Создаем новый массив строк
+        for (int i = 0; i < parts.Length; i++)  // Проходим по всем элементам
+            array[i] = parts[i].Trim();  // Убираем пробелы вокруг каждого элемента
+        return array;  // Возвращаем готовый массив
+    }
+}
